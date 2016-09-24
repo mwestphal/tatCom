@@ -3,8 +3,8 @@
 #include <math.h>
 #include <iostream>
 
-const int SCR_WIDTH = 800; 
-const int SCR_HEIGHT = 800;
+const int SCR_WIDTH = 1080;
+const int SCR_HEIGHT = 1080;
 const int CIRCLE_RADIUS = 100;
 const int NUMBER_OF_PARTICLES = 30;
 const int MAX_STEP = 1000;
@@ -12,6 +12,11 @@ const int MAX_STEP = 1000;
 double norm(const sf::Vector2f& vector)
 {
   return std::sqrt(vector.x*vector.x + vector.y*vector.y);
+}
+
+double dot(const sf::Vector2f& u, const sf::Vector2f& v)
+{
+  return u.x * v.x + u.y * v.y;
 }
 
 void rotateBy(sf::Vector2f& vector, float angleInRad)
@@ -26,7 +31,9 @@ void rotateBy(sf::Vector2f& vector, float angleInRad)
 int main()
 {
   // create the window
-  sf::RenderWindow window(sf::VideoMode(SCR_WIDTH, SCR_HEIGHT), "TatCom");
+  sf::ContextSettings settings;
+  settings.antialiasingLevel = 8;
+  sf::RenderWindow window(sf::VideoMode(SCR_WIDTH, SCR_HEIGHT), "TatCom", sf::Style::Default, settings);
 
   // run the program as long as the window is open
   while (window.isOpen())
@@ -46,25 +53,46 @@ int main()
 
       // draw center circle
       sf::CircleShape shape(CIRCLE_RADIUS+1);
-      shape.setPosition((SCR_WIDTH/2) - CIRCLE_RADIUS, (SCR_HEIGHT/2) - CIRCLE_RADIUS);
+      shape.setPosition((SCR_WIDTH/2) - (CIRCLE_RADIUS+1), (SCR_HEIGHT/2) - (CIRCLE_RADIUS+1));
       shape.setFillColor(sf::Color::Black);
       window.draw(shape);
 
       // draw particle paths
       sf::Vector2f centerPoint((SCR_WIDTH/2) , (SCR_HEIGHT/2));
-      for(int i = 0; i < NUMBER_OF_PARTICLES; i++)
+    //  unsigned int nParticle = (2 * M_PI * CIRCLE_RADIUS)/2;
+      unsigned int nParticle = 6;
+      for(int i = 0; i < nParticle; i++)
         {
           // get position on circle
-          sf::Vector2f outVector(std::cos((i * 2 * M_PI) / NUMBER_OF_PARTICLES), std::sin((i * 2 * M_PI) / NUMBER_OF_PARTICLES));
+          sf::Vector2f outVector(std::cos((i * 2 * M_PI) / nParticle), std::sin((i * 2 * M_PI) / nParticle));
           sf::Vector2f particlePoint(centerPoint.x + CIRCLE_RADIUS * outVector.x, centerPoint.y + CIRCLE_RADIUS * outVector.y);
           sf::Vector2f moveVector = outVector;
           std::vector<sf::Vertex> vertices;
           int nStep = 0;
           while(true)
             {
+              unsigned int width = 20;
+              sf::RectangleShape r(sf::Vector2f(width, 1));
+              r.setPosition(particlePoint + sf::Vector2f(-(static_cast<double>(width)/2)*moveVector.y, (static_cast<double>(width)/2)*moveVector.x));
+              r.setFillColor(sf::Color::Black);
+              r.setRotation((360/(2*M_PI)) * atan2(-moveVector.x, moveVector.y));
+              rotateBy(moveVector, 0.0001 * (nStep ));
+              particlePoint.x += moveVector.x;
+              particlePoint.y += moveVector.y;
+              nStep++;
+              window.draw(r);
+              if (norm(particlePoint - centerPoint) > 3000 || nStep > MAX_STEP)
+                {
+                  break;
+                }
+            }
+//          window.draw(&vertices[0], vertices.size(), sf::LineStrip);
+
+/*          while(true)
+            {
               vertices.push_back(sf::Vertex(sf::Vector2f(particlePoint)));
               vertices.back().color = sf::Color::Black;
-              rotateBy(moveVector, 0.0001 * (nStep ));
+//              rotateBy(moveVector, 0.0001 * (nStep ));
               particlePoint.x += moveVector.x;
               particlePoint.y += moveVector.y;
               nStep++;
@@ -73,7 +101,7 @@ int main()
                   break;
                 }
             }
-          window.draw(&vertices[0], vertices.size(), sf::LineStrip);
+          window.draw(&vertices[0], vertices.size(), sf::LineStrip);*/
         }
       // end the current frame
       window.display();
