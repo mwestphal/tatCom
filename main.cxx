@@ -59,7 +59,7 @@ int main()
 
       // draw particle paths
       sf::Vector2f centerPoint((SCR_WIDTH/2) , (SCR_HEIGHT/2));
-    //  unsigned int nParticle = (2 * M_PI * CIRCLE_RADIUS)/2;
+//      unsigned int nParticle = (2 * M_PI * CIRCLE_RADIUS)/2;
       unsigned int nParticle = 6;
       for(int i = 0; i < nParticle; i++)
         {
@@ -67,41 +67,39 @@ int main()
           sf::Vector2f outVector(std::cos((i * 2 * M_PI) / nParticle), std::sin((i * 2 * M_PI) / nParticle));
           sf::Vector2f particlePoint(centerPoint.x + CIRCLE_RADIUS * outVector.x, centerPoint.y + CIRCLE_RADIUS * outVector.y);
           sf::Vector2f moveVector = outVector;
-          std::vector<sf::Vertex> vertices;
+          sf::Vector2f normalVector(-moveVector.y, moveVector.x);
+          unsigned int width = 20;
+          sf::Vector2f previousPoint1(particlePoint + sf::Vector2f((width / 2) * normalVector.x, (width / 2) * normalVector.y));
+          sf::Vector2f previousPoint2(particlePoint + sf::Vector2f((width / 2) * -normalVector.x, (width / 2) * -normalVector.y));
           int nStep = 0;
           while(true)
             {
-              unsigned int width = 20;
-              sf::RectangleShape r(sf::Vector2f(width, 1));
-              r.setPosition(particlePoint + sf::Vector2f(-(static_cast<double>(width)/2)*moveVector.y, (static_cast<double>(width)/2)*moveVector.x));
-              r.setFillColor(sf::Color::Black);
-              r.setRotation((360/(2*M_PI)) * atan2(-moveVector.x, moveVector.y));
-              rotateBy(moveVector, 0.0001 * (nStep ));
-              particlePoint.x += moveVector.x;
-              particlePoint.y += moveVector.y;
-              nStep++;
-              window.draw(r);
-              if (norm(particlePoint - centerPoint) > 3000 || nStep > MAX_STEP)
-                {
-                  break;
-                }
-            }
-//          window.draw(&vertices[0], vertices.size(), sf::LineStrip);
+              // create an empty shape
+              sf::ConvexShape convex;
 
-/*          while(true)
-            {
-              vertices.push_back(sf::Vertex(sf::Vector2f(particlePoint)));
-              vertices.back().color = sf::Color::Black;
-//              rotateBy(moveVector, 0.0001 * (nStep ));
-              particlePoint.x += moveVector.x;
-              particlePoint.y += moveVector.y;
+              // resize it to 5 points
+              convex.setPointCount(4);
+              convex.setFillColor(sf::Color::Black);
+
+              // define the points
+              convex.setPoint(0, previousPoint1);
+              convex.setPoint(1, previousPoint2);
+
+              rotateBy(moveVector, 0.0001 * (nStep ));
+              particlePoint.x += moveVector.x*1;
+              particlePoint.y += moveVector.y*1;
               nStep++;
-              if (norm(particlePoint - centerPoint) > 3000 || nStep > MAX_STEP)
+              normalVector = sf::Vector2f(-moveVector.y, moveVector.x);
+              previousPoint1 = sf::Vector2f(particlePoint + sf::Vector2f((width / 2) * normalVector.x, (width / 2) * normalVector.y));
+              previousPoint2 = sf::Vector2f(particlePoint + sf::Vector2f((width / 2) * -normalVector.x, (width / 2) * -normalVector.y));
+              convex.setPoint(2, previousPoint2);
+              convex.setPoint(3, previousPoint1);
+              window.draw(convex);
+              if (norm(particlePoint - centerPoint) > 300 || nStep > MAX_STEP)
                 {
                   break;
                 }
             }
-          window.draw(&vertices[0], vertices.size(), sf::LineStrip);*/
         }
       // end the current frame
       window.display();
