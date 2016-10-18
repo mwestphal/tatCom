@@ -2,6 +2,9 @@
 
 #include <math.h>
 #include <iostream>
+#include <random>
+#include <queue>
+#include <chrono>
 
 const int SCR_WIDTH = 1080;
 const int SCR_HEIGHT = 1080;
@@ -30,6 +33,11 @@ void rotateBy(sf::Vector2f& vector, float angleInRad)
 
 int main()
 {
+    // construct a trivial random generator engine from a time-based seed:
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator (seed);
+  std::normal_distribution<double> distribution(0.0,M_PI/2);
+
   // create the window
   sf::ContextSettings settings;
   settings.antialiasingLevel = 8;
@@ -38,16 +46,7 @@ int main()
   // run the program as long as the window is open
   while (window.isOpen())
    {
-      // check all the window's events that were triggered since the last iteration of the loop
-      sf::Event event;
-      while (window.pollEvent(event))
-        {
-          // "close requested" event: we close the window
-          if (event.type == sf::Event::Closed)
-            window.close();
-        }
-
-      // clear the window with black color
+   // clear the window with black color
       window.clear(sf::Color::White);
 
 
@@ -59,13 +58,23 @@ int main()
 
       // draw particle paths
       sf::Vector2f centerPoint((SCR_WIDTH/2) , (SCR_HEIGHT/2));
-//      unsigned int nParticle = (2 * M_PI * CIRCLE_RADIUS)/2;
-      unsigned int nParticle = 6;
+      unsigned int nParticle = (2 * M_PI * CIRCLE_RADIUS)/8;
+//      unsigned int nParticle = 6;
+      std::queue<std::pair<sf::Vector2f, sf::Vector2f> > particleQueue;
       for(int i = 0; i < nParticle; i++)
         {
           // get position on circle
           sf::Vector2f outVector(std::cos((i * 2 * M_PI) / nParticle), std::sin((i * 2 * M_PI) / nParticle));
           sf::Vector2f particlePoint(centerPoint.x + CIRCLE_RADIUS * outVector.x, centerPoint.y + CIRCLE_RADIUS * outVector.y);
+          particleQueue.push(std::make_pair(particlePoint, outVector));
+        }
+
+      while (!particleQueue.empty())
+        {
+          std::pair<sf::Vector2f, sf::Vector2f> particle = particleQueue.front();
+          particleQueue.pop();
+          sf::Vector2f particlePoint = particle.first;
+          sf::Vector2f outVector = particle.second;
           sf::Vector2f moveVector = outVector;
           sf::Vector2f normalVector(-moveVector.y, moveVector.x);
           unsigned int width = 20;
@@ -85,7 +94,10 @@ int main()
               convex.setPoint(0, previousPoint1);
               convex.setPoint(1, previousPoint2);
 
-              rotateBy(moveVector, 0.0001 * (nStep ));
+              //rotateBy(moveVector, 0.0001 * (nStep ));
+              moveVector = outVector;
+              rotateBy(moveVector, distribution(generator));
+
               particlePoint.x += moveVector.x*1;
               particlePoint.y += moveVector.y*1;
               nStep++;
@@ -103,7 +115,24 @@ int main()
         }
       // end the current frame
       window.display();
-    }
 
+      while (window.isOpen())
+        {
+        // check all the window's events that were triggered since the last iteration of the loop
+        sf::Event event;
+        while (window.pollEvent(event))
+          {
+          // "close requested" event: we close the window
+          if (event.type == sf::Event::Closed)
+            {
+            window.close();
+            }
+          }
+        if (event.type == sf::Event::KeyPressed)
+          {
+          break;
+          }
+        }
+   }
   return 0;
 }
